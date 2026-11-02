@@ -150,6 +150,17 @@ textarea.grande{min-height:260px;font-family:ui-monospace,Menlo,Consolas,monospa
 
 /* slides projetor */
 #projetor{position:fixed;inset:0;z-index:100;background:#0b0d18;display:flex;flex-direction:column}
+#projetor .girar{display:none}
+@media (orientation:portrait) and (max-width:700px){#projetor .girar{display:flex;position:absolute;top:70px;left:12px;right:12px;z-index:5;background:rgba(0,0,0,.65);color:#fff;border-radius:12px;padding:10px 14px;font-weight:800;font-size:14px;gap:8px;align-items:center;justify-content:center}}
+.tut details{background:var(--card);border:1px solid var(--linha);border-radius:14px;margin-bottom:10px;box-shadow:var(--sombra)}
+.tut summary{cursor:pointer;padding:14px 16px;font-weight:800;list-style:none;display:flex;gap:10px;align-items:center}
+.tut summary::-webkit-details-marker{display:none}
+.tut summary:after{content:'+';margin-left:auto;font-size:22px;color:var(--txt2);font-weight:700}
+.tut details[open] summary:after{content:'–'}
+.tut .corpo{padding:0 16px 14px}
+.tut .corpo ol,.tut .corpo ul{padding-left:20px;margin:6px 0 10px}
+.tut .corpo li{margin-bottom:6px}
+.tut .dica{background:var(--pri-claro);border-radius:10px;padding:10px 12px;font-size:14px;margin:8px 0}
 #projetor .palco{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
 #projetor .sl{width:100%;height:100%}
 #projetor .controles{position:absolute;top:14px;right:14px;display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;opacity:.25;transition:opacity .2s}
@@ -282,6 +293,7 @@ var IC = {
   copiar:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   casa:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
   bolo:'<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1M2 21h20M7 8v3M12 8v3M17 8v3M7 4h.01M12 4h.01M17 4h.01"/>',
+  ajuda:'<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
   chave:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2M16 7l3 3M14 9l2 2"/>',
   digital:'<path d="M12 11c0 3.5-1 6.5-3 9M8 9.5a4 4 0 0 1 8 .5c0 4-1 7-2.5 10M5 7a8 8 0 0 1 14 3c0 2-.2 4-.7 6M4 12a8 8 0 0 0 .5 3M16 20.5c.4-.9.7-1.8 1-2.8"/>',
   lixo:'<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'
@@ -399,7 +411,7 @@ function projetar(texto,lic,inicio){
   PJ.sl=parseSlides(texto);PJ.i=inicio||0;PJ.lic=lic;
   if(!PJ.sl.length){toast('Esta lição ainda não tem slides.',true);return;}
   var d=document.createElement('div');d.id='projetor';
-  d.innerHTML='<div class="palco" id="pj-palco"></div><div class="controles"><button onclick="pjIr(-1)">◀ Anterior</button><button onclick="pjTela()">⛶ Tela cheia</button><button onclick="pjFechar()">✕ Sair</button><button onclick="pjIr(1)">Próximo ▶</button></div>';
+  d.innerHTML='<div class="girar" onclick="this.remove()">🔄 Gire o celular (deitado) para ver melhor · toque para fechar</div><div class="palco" id="pj-palco"></div><div class="controles"><button onclick="pjIr(-1)">◀ Anterior</button><button onclick="pjTela()">⛶ Tela cheia</button><button onclick="pjFechar()">✕ Sair</button><button onclick="pjIr(1)">Próximo ▶</button></div>';
   document.body.appendChild(d);
   var x0=null;d.addEventListener('touchstart',function(e){x0=e.touches[0].clientX;});
   d.addEventListener('touchend',function(e){if(x0==null)return;var dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>40)pjIr(dx<0?1:-1);x0=null;});
@@ -541,9 +553,10 @@ function recarregar(){return carregarTudo(true);}
    ESTRUTURA (menu)
    ========================================================= */
 function menuItens(){
-  if(S.d.perfil==='aluno')return [['a-inicio','casa','Início'],['a-licoes','licoes','Lições'],['a-tarefas','tarefas','Tarefas'],['a-freq','chamada','Frequência']];
+  if(S.d.perfil==='aluno')return [['a-inicio','casa','Início'],['a-licoes','licoes','Lições'],['a-tarefas','tarefas','Tarefas'],['a-freq','chamada','Frequência'],['ajuda','ajuda','Ajuda']];
   var it=[['painel','painel','Painel'],['licoes','licoes','Lições 2027'],['chamada','chamada','Chamada'],['alunos','alunos','Alunos'],['cuidado','cuidado','Cuidado e alertas'],['tarefas','tarefas','Tarefas de casa'],['progresso','progresso','Progresso'],['ia','ia','Pesquisa com IA']];
   if(S.d.perfil==='coord'){it.push(['professores','professores','Professores']);it.push(['config','config','Configurações']);}
+  it.push(['ajuda','ajuda','Tutorial e ajuda']);
   return it;
 }
 function bolha(v){
@@ -608,6 +621,7 @@ VIEWS.painel=function(){
   var lc=function(l,rot){if(!l)return '<div class="card"><p class="muted">Nenhuma lição '+rot.toLowerCase()+'.</p></div>';
     return '<div class="card licao-card" onclick="ir(\'licao\',\''+l.id+'\')"><div class="num" style="background:'+corEixo(l.eixo)+'">'+l.semana+'</div><div style="flex:1;min-width:0"><div class="peq muted" style="font-weight:800">'+rot+' · '+fmtD(l.data)+'</div><div class="t">'+esc(l.titulo)+'</div><div class="d">'+esc(l.textoBase)+'</div><div class="btns" style="margin-top:10px"><button class="btn peq" onclick="event.stopPropagation();projetarLicao(\''+l.id+'\')">'+ic('projetar')+'Projetar slides</button>'+(l.status!=='completa'?'<span class="chip alerta">Planejada – gerar com IA</span>':'<span class="chip ok">Lição completa</span>')+'</div></div></div>';};
   return topo('Olá, '+esc(primeiro(S.d.eu.nome))+'!',esc(c.igreja)+' · '+esc(c.subtitulo))+
+    (ler('tt_tut_visto')?'':'<div class="card" style="background:var(--pri-claro);border:0;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>👋 Novo por aqui?</b><br><span class="peq">Veja o tutorial com o passo a passo de cada parte do app.</span></div><button class="btn" onclick="ir(\'ajuda\')">'+ic('ajuda')+'Abrir tutorial</button><button class="btn linha peq" onclick="guardar(\'tt_tut_visto\',1);render()">Já sei usar</button></div>')+
     '<div class="grade g4">'+
       '<div class="card kpi"><span class="n">'+ativos.length+'</span><span class="r">Alunos ativos</span></div>'+
       '<div class="card kpi"><span class="n">'+(ultData?presUlt:'–')+'</span><span class="r">Presentes '+(ultData?'em '+fmtDC(ultData):'(sem chamada)')+'</span></div>'+
@@ -989,6 +1003,120 @@ function salvarConfig(){
   chamar('salvarConfig',d).then(function(){toast('Configurações salvas!');recarregar().then(montarShell).then(render);});
 }
 function redatar(){var a=val('cf-ano');if(!confirm('Mudar as datas de TODAS as lições para os domingos de '+a+'?'))return;chamar('redatarAno',{ano:a}).then(function(){toast('Datas reorganizadas para '+a+'!');recarregar();});}
+
+
+/* ---------- Tutorial e ajuda ---------- */
+var TUTORIAL = {
+ coord: [
+  ['🚀','Primeiros passos da Coordenação',`
+<ol><li>Em <b>Configurações</b>, confira o nome da igreja e o nome da turma.</li>
+<li>Em <b>Professores</b>, cadastre a equipe (veja abaixo).</li>
+<li>Peça aos professores que cadastrem os alunos – ou cadastre você mesmo em <b>Alunos</b>.</li>
+<li>Se quiser usar a IA, cole a chave do Gemini em <b>Configurações → Inteligência Artificial</b>.</li></ol>
+<div class="dica">Só a Coordenação vê os menus <b>Professores</b> e <b>Configurações</b>.</div>`],
+  ['👩‍🏫','Cadastrar professores e enviar o acesso',`
+<ol><li>Menu <b>Professores</b> → <b>Novo professor</b>.</li>
+<li>Preencha nome e WhatsApp (o número já fica no formato (75) 99999-9999).</li>
+<li>Crie um <b>PIN</b> de 4 a 6 números e escolha o perfil: <b>Professor(a)</b> ou <b>Coordenação</b>.</li>
+<li>Clique em <b>Salvar</b> e depois em <b>Enviar acesso</b>: o WhatsApp abre com o link do app e o PIN.</li></ol>
+<div class="dica">Esqueceu o PIN? Em <b>Professores → Editar</b>, digite um PIN novo e clique em <b>Enviar acesso</b>.</div>`],
+  ['⚙️','Configurações',`
+<ul><li><b>Turmas:</b> separe por vírgula (ex.: Pré-Adolescentes, Adolescentes).</li>
+<li><b>Professores podem editar lições?</b> Por padrão, só a Coordenação edita.</li>
+<li><b>Mensagens de WhatsApp:</b> você pode mudar os textos. As palavras entre chaves ({aluno}, {responsavel}...) são trocadas automaticamente.</li>
+<li><b>Link do app:</b> deixe vazio para o app usar o endereço certo sozinho.</li>
+<li><b>Novo ano letivo:</b> reorganiza as datas das lições para os domingos do ano escolhido.</li></ul>`],
+  ['✏️','Editar uma lição ou gerar com a IA',`
+<ol><li>Abra a lição em <b>Lições</b> → botão <b>Editar</b>.</li>
+<li>Altere o que quiser e clique em <b>Salvar lição</b>.</li>
+<li>O botão <b>Reescrever com IA</b> cria uma nova versão da lição. Revise tudo (principalmente os versículos) antes de salvar.</li></ol>`]
+ ],
+ prof: [
+  ['📲','Entrar e instalar o app no celular',`
+<ol><li>Abra o link que você recebeu no WhatsApp.</li>
+<li>Toque em <b>Sou professor</b>, escolha o seu nome e digite o PIN.</li>
+<li>Toque em <b>📲 Instalar o app no celular</b> (na tela de entrada ou no menu <b>Mais</b>):
+<ul><li><b>Android:</b> use o Chrome → <b>Instalar</b>.</li><li><b>iPhone:</b> use o Safari → Compartilhar ⬆️ → <b>Adicionar à Tela de Início</b>.</li></ul></li></ol>`],
+  ['🔑','Trocar o PIN e entrar com a digital',`
+<ol><li>Menu <b>Meu acesso</b> (no computador, na barra da esquerda; no celular, em <b>Mais</b>).</li>
+<li>Para trocar o PIN: digite o PIN atual e o novo duas vezes → <b>Salvar novo PIN</b>.</li>
+<li>Para a digital: <b>Ativar entrada com digital</b> e encoste o dedo no leitor. Da próxima vez, o app pede só a digital.</li></ol>`],
+  ['🧒','Cadastrar alunos e enviar o código',`
+<ol><li>Menu <b>Alunos</b> → <b>Novo aluno</b>.</li>
+<li>Preencha nome, nascimento e, principalmente, o <b>WhatsApp do responsável</b>.</li>
+<li>Ao salvar, o app cria o <b>código de acesso</b> (ex.: ANA-4821) e abre a ficha.</li>
+<li>Na ficha, clique em <b>Enviar aos pais</b>: vai pelo WhatsApp o link do app e o código.</li></ol>
+<div class="dica">Na ficha do aluno você vê frequência, tarefas, contatos e observações (alergias, pedidos de oração).</div>`],
+  ['✅','Fazer a chamada',`
+<ol><li>Menu <b>Chamada</b>. A data do domingo e a lição do dia já vêm preenchidas.</li>
+<li>Toque em <b>Marcar todos presentes</b>.</li>
+<li>Para quem faltou, toque em <b>F</b> (ou <b>J</b> se a falta foi justificada).</li>
+<li>Clique em <b>Salvar chamada</b>. O app pergunta se você quer mandar o "senti sua falta".</li></ol>`],
+  ['💜','Cuidado e alertas ("Senti sua falta")',`
+<ul><li>🟡 faltou na última aula · 🟠 2 faltas seguidas · 🔴 3 ou mais.</li>
+<li>Toque em <b>Senti sua falta</b>: o WhatsApp abre com mensagens prontas para o aluno e para os pais.</li>
+<li>O app marca "mensagem enviada" para a equipe saber que alguém já cuidou.</li></ul>`],
+  ['📖','Preparar a aula',`
+<ol><li>Menu <b>Lições</b> → toque na lição (a próxima aula fica destacada).</li>
+<li>Abas: <b>Visão geral</b> (versículo, objetivo, materiais, roteiro), <b>Estudo</b>, <b>Perguntas</b>, <b>Dinâmica</b>, <b>Slides</b> e <b>Tarefa de casa</b>.</li>
+<li>Aba <b>Pesquisar com IA</b>: peça contexto histórico, ilustrações ou ideias de dinâmica.</li>
+<li>Depois da aula, clique em <b>Enviar aos pais</b> para mandar o resumo (pode copiar e colar no grupo de pais).</li></ol>`],
+  ['📽️','Projetar os slides (computador, TV ou celular)',`
+<p><b>No computador:</b> abra a lição → <b>Projetar slides</b> → <b>Tela cheia</b>. Avance com as setas do teclado ou com um passador de slides.</p>
+<p><b>Pelo celular, há três jeitos:</b></p>
+<ol><li><b>Espelhar na Smart TV (sem fio):</b> celular e TV no mesmo Wi-Fi.
+<ul><li><b>Samsung:</b> puxe a barra de cima e toque em <b>Smart View</b> → escolha a TV.</li>
+<li><b>Outros Android:</b> "Transmitir tela" / "Espelhamento de tela", ou um Chromecast.</li>
+<li><b>iPhone:</b> Central de Controle → <b>Espelhar Tela</b> (TV com AirPlay ou Apple TV).</li></ul></li>
+<li><b>Cabo:</b> adaptador <b>USB-C para HDMI</b> (Android; nos Samsung abre o DeX) ou <b>Lightning/USB-C para HDMI</b> (iPhone) ligado ao projetor ou à TV.</li>
+<li><b>Direto na TV:</b> abra o navegador da Smart TV, digite o link do app, entre com o seu PIN e projete. Use o controle remoto para avançar.</li></ol>
+<p>Depois de conectar, abra a lição → <b>Projetar slides</b> e <b>deite o celular</b> (modo paisagem). Toque no lado direito da tela para avançar e no esquerdo para voltar, ou deslize o dedo.</p>
+<div class="dica">Teste a conexão com a TV antes da aula começar.</div>`],
+  ['📝','Corrigir as tarefas de casa',`
+<ol><li>Menu <b>Tarefas de casa</b> → aba <b>Para corrigir</b>.</li>
+<li>As questões de múltipla escolha já vêm corrigidas. Leia as respostas abertas.</li>
+<li>Dê as estrelas, escreva um comentário e clique em <b>Salvar correção</b>.</li>
+<li>Se quiser, use <b>Enviar comentário</b> para mandar pelo WhatsApp.</li></ol>
+<div class="dica">Na aba da lição aparece quem ainda não entregou, com o botão <b>Lembrar</b>.</div>`],
+  ['📊','Acompanhar o progresso',`
+<ul><li>Menu <b>Progresso</b>: frequência, P/F/J, tarefas entregues e acertos de cada aluno.</li>
+<li>Toque no aluno para abrir a ficha completa.</li>
+<li>No <b>Painel</b>: alunos ativos, presentes, alertas, tarefas para corrigir, gráfico dos domingos e aniversariantes do mês (com botão de parabéns).</li></ul>`],
+  ['❓','Problemas comuns',`
+<ul><li><b>"Sem conexão com o servidor":</b> verifique a internet e tente de novo.</li>
+<li><b>O app não atualizou:</b> feche e abra de novo (no computador, Ctrl+F5).</li>
+<li><b>O WhatsApp não abriu:</b> confira se o número tem DDD.</li>
+<li><b>Esqueci o PIN:</b> peça à Coordenação um PIN novo.</li></ul>`]
+ ],
+ aluno: [
+  ['📲','Entrar e instalar o app',`
+<ol><li>Abra o link que seu professor (ou seus pais) enviou.</li>
+<li>Toque em <b>Sou aluno</b> e digite o seu <b>código</b> (ex.: ANA-4821).</li>
+<li>Toque em <b>📲 Instalar app</b> para colocar o ícone na tela do celular.</li>
+<li>Quer entrar sem digitar o código? Toque em <b>Entrar com digital</b> e ative.</li></ol>`],
+  ['📖','Rever as lições',`
+<ol><li>Toque em <b>Lições</b> e escolha a aula.</li>
+<li>Leia o resumo e o versículo da semana (tente decorar!).</li>
+<li>Toque em <b>Rever os slides da aula</b> para ver de novo o que foi estudado.</li></ol>`],
+  ['📝','Fazer a tarefa de casa',`
+<ol><li>Toque em <b>Tarefas</b> → <b>Fazer</b>.</li>
+<li>Leia o <b>desafio da semana</b> e responda às perguntas.</li>
+<li>Toque em <b>Enviar tarefa</b>. Você vê na hora quantas acertou.</li>
+<li>Depois, o professor deixa estrelas ⭐ e um comentário 💬 para você.</li></ol>`],
+  ['🏆','Frequência e conquistas',`
+<ul><li>Em <b>Frequência</b> você vê os domingos em que esteve presente.</li>
+<li>No <b>Início</b> aparecem as suas conquistas: primeira tarefa, domingos seguidos, nota máxima e outras!</li></ul>`]
+ ]
+};
+VIEWS.ajuda=function(){
+  guardar('tt_tut_visto',1);
+  var p=S.d.perfil, grupos=[];
+  if(p==='aluno') grupos.push(['Para você, aluno',TUTORIAL.aluno]);
+  else { grupos.push(['Para todos os professores',TUTORIAL.prof]); if(p==='coord') grupos.push(['Só para a Coordenação',TUTORIAL.coord]); grupos.push(['O que o aluno vê',TUTORIAL.aluno]); }
+  return topo('Tutorial e ajuda','Toque em cada assunto para ver o passo a passo.')+'<div class="tut">'+grupos.map(function(g,gi){
+    return '<div class="secao-t">'+g[0]+'</div>'+g[1].map(function(it,i){return '<details'+(gi===0&&i===0?' open':'')+'><summary><span style="font-size:20px">'+it[0]+'</span>'+it[1]+'</summary><div class="corpo">'+it[2]+'</div></details>';}).join('');
+  }).join('')+'</div><p class="muted peq" style="margin-top:16px">Dúvidas? Fale com a Coordenação da sua igreja: '+esc(S.d.config.igreja)+'.</p>';
+};
 
 /* ---------- Instalar como app ---------- */
 var _promptInstalar=null;
