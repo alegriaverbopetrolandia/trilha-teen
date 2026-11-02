@@ -260,6 +260,8 @@ var IC = {
   copiar:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   casa:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
   bolo:'<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1M2 21h20M7 8v3M12 8v3M17 8v3M7 4h.01M12 4h.01M17 4h.01"/>',
+  chave:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2M16 7l3 3M14 9l2 2"/>',
+  digital:'<path d="M12 11c0 3.5-1 6.5-3 9M8 9.5a4 4 0 0 1 8 .5c0 4-1 7-2.5 10M5 7a8 8 0 0 1 14 3c0 2-.2 4-.7 6M4 12a8 8 0 0 0 .5 3M16 20.5c.4-.9.7-1.8 1-2.8"/>',
   lixo:'<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'
 };
 function ic(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(IC[n]||'')+'</svg>';}
@@ -288,7 +290,7 @@ function chamar(acao,dados,silencioso){
     var fim=function(txt){
       if(!silencioso) carregando(false);
       var r; try{r=JSON.parse(txt);}catch(e){r={ok:false,erro:'Resposta inválida do servidor.'};}
-      if(r.ok) ok(r.r); else { toast(r.erro,true); if(/Sessão expirada|PIN inválido|Código inválido/.test(r.erro)) sair(); falha(new Error(r.erro)); }
+      if(r.ok) ok(r.r); else { toast(r.erro,true); if(/Sessão expirada|PIN inválido|Código inválido/.test(r.erro)){guardar('tt_bio',null);sair();} falha(new Error(r.erro)); }
     };
     var credJ=JSON.stringify(S.cred), dadosJ=JSON.stringify(dados||{});
     if(API_URL&&/^https?:/.test(API_URL)){
@@ -389,6 +391,10 @@ function pjTela(){var el=$('#projetor');try{if(!document.fullscreenElement)el.re
 function pjFechar(){try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}var el=$('#projetor');if(el)el.remove();document.removeEventListener('keydown',pjTecla);}
 
 /* ---------- WhatsApp ---------- */
+function fmtTel(v){var d=String(v||'').replace(/\D/g,'');if(d.length>11&&d.indexOf('55')===0)d=d.slice(2);d=d.slice(0,11);
+  if(d.length<=2)return d?'('+d:'';if(d.length<=6)return '('+d.slice(0,2)+') '+d.slice(2);
+  if(d.length<=10)return '('+d.slice(0,2)+') '+d.slice(2,6)+'-'+d.slice(6);return '('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7);}
+document.addEventListener('input',function(e){var t=e.target;if(t&&t.type==='tel'){var a=t.value,f=fmtTel(a);if(a!==f){t.value=f;try{t.setSelectionRange(f.length,f.length);}catch(x){}}}});
 function numZap(n){var d=String(n||'').replace(/\D/g,'');if(!d)return '';if(d.length<=11)d='55'+d;return d;}
 function tpl(t,v){return String(t||'').replace(/\{(\w+)\}/g,function(m,k){return v[k]!=null?v[k]:m;});}
 function varsAluno(a,extra){
@@ -456,6 +462,8 @@ function idade(n){if(!n)return '';var h=dt(hoje()),d=dt(n);var i=h.getFullYear()
 function iniciar(){
   aplicarTema();
   S.cred=ler('tt_cred');
+  var bio=ler('tt_bio');
+  if(S.cred&&bio&&bio.cred&&bio.cred.id===S.cred.id&&!S.desbloqueado){S.cred=null;telaEntrada();return;}
   if(window.DEMO_API) document.body.insertAdjacentHTML('afterbegin','<div id="demo-faixa">MODO DEMONSTRAÇÃO – dados fictícios, salvos só neste navegador. Data simulada: '+fmtD(window.DEMO_HOJE||'')+'.</div>');
   if(S.cred) carregarTudo(); else telaEntrada();
 }
@@ -472,7 +480,7 @@ function telaEntrada(){
       $('#raiz').innerHTML='<div class="login-fundo"><div class="login-box">'+marca+'<div class="card"><h3>Primeiro acesso</h3><p class="muted peq">Cadastre a coordenação da Escola Bíblica. Depois você cadastra os professores e os alunos.</p>'+
       '<div class="campo"><label>Nome da igreja</label><input id="s-igreja" type="text" placeholder="Ex.: Igreja Verbo da Vida"></div>'+
       '<div class="campo"><label>Seu nome</label><input id="s-nome" type="text"></div>'+
-      '<div class="campo"><label>Seu WhatsApp (com DDD)</label><input id="s-zap" type="tel" placeholder="(75) 99999-9999"></div>'+
+      '<div class="campo"><label>Seu WhatsApp (com DDD)</label><input id="s-zap" type="tel" inputmode="numeric" maxlength="15" placeholder="(75) 99999-9999"></div>'+
       '<div class="campo"><label>Crie um PIN (4 a 6 números)</label><input id="s-pin" type="password" inputmode="numeric" maxlength="6"></div>'+
       '<button class="btn" style="width:100%" onclick="fazerSetup()">Começar</button></div></div></div>';
       return;
@@ -484,7 +492,9 @@ function telaEntrada(){
       (aba==='aluno'?
         '<div class="campo"><label>Seu código de acesso</label><input id="l-cod" type="text" placeholder="Ex.: ANA-4821" style="text-transform:uppercase;font-size:20px;text-align:center;letter-spacing:.08em" onkeydown="if(event.key===\'Enter\')entrarAluno()"><small>O código é entregue pelo seu professor.</small></div><button class="btn" style="width:100%" onclick="entrarAluno()">Entrar</button>'
       : '<div class="campo"><label>Professor(a)</label><select id="l-prof">'+opts+'</select></div><div class="campo"><label>PIN</label><input id="l-pin" type="password" inputmode="numeric" maxlength="6" style="font-size:20px;text-align:center;letter-spacing:.3em" onkeydown="if(event.key===\'Enter\')entrarProf()"></div><button class="btn" style="width:100%" onclick="entrarProf()">Entrar</button>')+
-      '</div><p class="muted peq" style="text-align:center;margin-top:14px">'+esc(e.igreja)+'</p></div></div>';
+      '</div><div id="bio-login"></div><p class="muted peq" style="text-align:center;margin-top:14px">'+esc(e.igreja)+'</p></div></div>';
+    var bio=ler('tt_bio');
+    if(bio)bioDisponivel().then(function(ok){var el=document.getElementById('bio-login');if(ok&&el){el.innerHTML='<button class="btn" style="width:100%;margin-top:14px;padding:14px" onclick="entrarComDigital()">'+ic('digital')+'Entrar com a digital ('+esc(primeiro(bio.nome))+')</button>';}});
     var ul=ler('tt_ultimo_prof');if(ul&&$('#l-prof'))$('#l-prof').value=ul;
   });
 }
@@ -493,7 +503,7 @@ function fazerSetup(){
 }
 function entrarProf(){var id=$('#l-prof').value;guardar('tt_ultimo_prof',id);chamar('login',{tipo:'prof',id:id,pin:$('#l-pin').value.trim()}).then(function(r){S.cred=r.cred;guardar('tt_cred',r.cred);S.view='painel';carregarTudo();});}
 function entrarAluno(){chamar('login',{tipo:'aluno',codigo:$('#l-cod').value.trim()}).then(function(r){S.cred=r.cred;guardar('tt_cred',r.cred);S.view='inicio';carregarTudo();});}
-function sair(){S.cred=null;S.d=null;guardar('tt_cred',null);pjFechar();fecharModal();telaEntrada();}
+function sair(){S.desbloqueado=false;S.cred=null;S.d=null;guardar('tt_cred',null);pjFechar();fecharModal();telaEntrada();}
 function carregarTudo(manter){
   return chamar('bootstrap',{},!!manter).then(function(d){
     S.d=d;corPrincipal(d.config.corPrincipal);document.title=d.config.nomeApp+' – '+d.config.igreja;
@@ -524,7 +534,7 @@ function montarShell(){
   var itens=menuItens();
   var lat='<aside id="lateral"><div class="marca"><div class="logo">'+esc(iniciais(c.nomeApp))+'</div><div><b>'+esc(c.nomeApp)+'</b><small>'+esc(c.igreja)+'</small></div></div>'+
     itens.map(function(i){return '<button class="nav-item" data-v="'+i[0]+'" onclick="ir(\''+i[0]+'\')">'+ic(i[1])+'<span>'+i[2]+'</span><span class="bolha" data-b="'+i[0]+'"></span></button>';}).join('')+
-    '<div class="nav-sep"></div><button class="nav-item" onclick="alternarTema()">'+ic('config')+'<span>Claro / escuro</span></button><button class="nav-item" onclick="sair()">'+ic('sair')+'<span>Sair ('+esc(primeiro(S.d.eu.nome))+')</span></button></aside>';
+    '<div class="nav-sep"></div><button class="nav-item" onclick="meuAcesso()">'+ic('chave')+'<span>Meu acesso</span></button><button class="nav-item" onclick="alternarTema()">'+ic('config')+'<span>Claro / escuro</span></button><button class="nav-item" onclick="sair()">'+ic('sair')+'<span>Sair ('+esc(primeiro(S.d.eu.nome))+')</span></button></aside>';
   var mob;
   if(S.d.perfil==='aluno') mob=itens.concat([['sair','sair','Sair']]);
   else mob=[itens[0],itens[1],itens[2],itens[4],['mais','mais','Mais']];
@@ -534,7 +544,7 @@ function montarShell(){
 function menuMais(){
   var itens=menuItens().slice(3);
   abrirModal('Menu','<div class="lista">'+itens.map(function(i){return '<button class="nav-item" onclick="fecharModal();ir(\''+i[0]+'\')">'+ic(i[1])+'<span>'+i[2]+'</span><span class="bolha" style="display:'+(bolha(i[0])?'block':'none')+'">'+bolha(i[0])+'</span></button>';}).join('')+
-    '<div class="nav-sep"></div><button class="nav-item" onclick="alternarTema()">'+ic('config')+'<span>Claro / escuro</span></button><button class="nav-item" onclick="fecharModal();sair()">'+ic('sair')+'<span>Sair</span></button></div>');
+    '<div class="nav-sep"></div><button class="nav-item" onclick="fecharModal();meuAcesso()">'+ic('chave')+'<span>Meu acesso (PIN e digital)</span></button><button class="nav-item" onclick="alternarTema()">'+ic('config')+'<span>Claro / escuro</span></button><button class="nav-item" onclick="fecharModal();sair()">'+ic('sair')+'<span>Sair</span></button></div>');
 }
 function ir(v,param){S.view=v;S.param=param||null;render();window.scrollTo(0,0);}
 function render(){
@@ -805,7 +815,7 @@ VIEWS.alunos=function(){
 };
 function editarAluno(id){
   var a=id?S.d.alunos.filter(function(x){return x.id===id;})[0]:{turma:turmas()[0]};
-  var f=function(k,rot,tipo,ph){return '<div class="campo"><label>'+rot+'</label><input type="'+(tipo||'text')+'" id="a-'+k+'" value="'+esc(a[k]||'')+'" placeholder="'+(ph||'')+'"></div>';};
+  var f=function(k,rot,tipo,ph){var v=a[k]||'';if(tipo==='tel')v=fmtTel(v);return '<div class="campo"><label>'+rot+'</label><input type="'+(tipo||'text')+'" id="a-'+k+'" value="'+esc(v)+'" placeholder="'+(ph||'')+'"'+(tipo==='tel'?' inputmode="numeric" maxlength="15"':'')+'></div>';};
   abrirModal(id?'Editar aluno':'Novo aluno',
     f('nome','Nome completo do aluno')+'<div class="grade g2">'+f('nascimento','Data de nascimento','date')+'<div class="campo"><label>Turma</label><select id="a-turma">'+turmas().map(function(t){return '<option'+(t===a.turma?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select></div></div>'+
     f('whatsapp','WhatsApp do aluno (se tiver)','tel','(75) 99999-9999')+
@@ -822,7 +832,7 @@ function fichaAluno(id){
   var a=S.d.alunos.filter(function(x){return x.id===id;})[0],st=statsAluno(a);
   var pr=presDe(id).slice(0,12);
   var ent=S.d.entregas.filter(function(e){return e.alunoId===id;});
-  var cont=function(nome,par,num){return num?'<div class="lin"><div class="info"><b>'+esc(nome||'—')+'</b><span>'+esc(par||'')+' · '+esc(num)+'</span></div><button class="btn zap peq" onclick="abrirZap(\''+esc(num)+'\',\'\')">'+ic('zap')+'Conversar</button></div>':'';};
+  var cont=function(nome,par,num){return num?'<div class="lin"><div class="info"><b>'+esc(nome||'—')+'</b><span>'+esc(par||'')+' · '+esc(fmtTel(num))+'</span></div><button class="btn zap peq" onclick="abrirZap(\''+esc(num)+'\',\'\')">'+ic('zap')+'Conversar</button></div>':'';};
   abrirModal(esc(a.nome),
     '<div class="grade g4"><div class="kpi"><span class="n">'+(st.freq!=null?st.freq+'%':'–')+'</span><span class="r">Frequência</span></div><div class="kpi"><span class="n">'+st.P+'</span><span class="r">Presenças</span></div><div class="kpi"><span class="n">'+st.entregas+'/'+st.liberadas+'</span><span class="r">Tarefas</span></div><div class="kpi"><span class="n">'+(st.media!=null?st.media+'%':'–')+'</span><span class="r">Acertos</span></div></div>'+
     '<div class="card" style="margin:14px 0;background:var(--pri-claro);border:0"><div class="btns"><div style="flex:1"><div class="peq muted" style="font-weight:800">Código de acesso do aluno</div><div style="font-size:24px;font-weight:900;font-family:monospace;letter-spacing:.06em">'+esc(a.codigo)+'</div></div>'+
@@ -908,19 +918,31 @@ function perguntarIA(licId){
 VIEWS.professores=function(){
   var l=S.d.professores.filter(function(p){return p.ativo!=='nao';}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
   return topo('Professores',l.length+' cadastrados','<button class="btn" onclick="editarProf()">'+ic('mais2')+'Novo professor</button>')+
-    '<div class="card"><div class="lista">'+l.map(function(p){return '<div class="lin">'+av(p.nome)+'<div class="info"><b>'+esc(p.nome)+'</b><span>'+(p.perfil==='coord'?'Coordenação':'Professor(a)')+(p.whatsapp?' · '+esc(p.whatsapp):'')+'</span></div>'+(p.whatsapp?'<button class="btn zap peq icone" onclick="abrirZap(\''+esc(p.whatsapp)+'\',\'\')">'+ic('zap')+'</button>':'')+'<button class="btn sec peq" onclick="editarProf(\''+p.id+'\')">Editar</button></div>';}).join('')+'</div></div>'+
-    '<p class="muted peq">Cada professor entra no app escolhendo o próprio nome e digitando o PIN. A coordenação pode cadastrar professores, editar lições e configurar o sistema.</p>';
+    '<div class="card"><div class="lista">'+l.map(function(p){return '<div class="lin">'+av(p.nome)+'<div class="info"><b>'+esc(p.nome)+'</b><span>'+(p.perfil==='coord'?'Coordenação':'Professor(a)')+(p.whatsapp?' · '+esc(fmtTel(p.whatsapp)):'')+'</span></div>'+(p.whatsapp?'<button class="btn zap peq icone" onclick="abrirZap(\''+esc(p.whatsapp)+'\',\'\')">'+ic('zap')+'</button>':'')+'<button class="btn zap peq" onclick="enviarAcessoProf(\''+p.id+'\')">'+ic('zap')+'Enviar acesso</button><button class="btn sec peq" onclick="editarProf(\''+p.id+'\')">Editar</button></div>';}).join('')+'</div></div>'+
+    '<p class="muted peq">Cada professor entra no app escolhendo o próprio nome e digitando o PIN. O botão <b>Enviar acesso</b> abre o WhatsApp com o link do app e o PIN. Professores podem cadastrar alunos; apenas a <b>Coordenação</b> cadastra, edita ou remove professores e configura o sistema.</p>';
 };
 function editarProf(id){
   var p=id?S.d.professores.filter(function(x){return x.id===id;})[0]:{perfil:'prof'};
   abrirModal(id?'Editar professor':'Novo professor',
-    '<div class="campo"><label>Nome</label><input type="text" id="p-nome" value="'+esc(p.nome||'')+'"></div><div class="grade g2"><div class="campo"><label>WhatsApp</label><input type="tel" id="p-zap" value="'+esc(p.whatsapp||'')+'"></div><div class="campo"><label>E-mail (opcional)</label><input type="email" id="p-email" value="'+esc(p.email||'')+'"></div></div>'+
+    '<div class="campo"><label>Nome</label><input type="text" id="p-nome" value="'+esc(p.nome||'')+'"></div><div class="grade g2"><div class="campo"><label>WhatsApp</label><input type="tel" id="p-zap" inputmode="numeric" maxlength="15" placeholder="(75) 99999-9999" value="'+esc(fmtTel(p.whatsapp))+'"></div><div class="campo"><label>E-mail (opcional)</label><input type="email" id="p-email" value="'+esc(p.email||'')+'"></div></div>'+
     '<div class="grade g2"><div class="campo"><label>'+(id?'Novo PIN (deixe vazio para manter)':'PIN (4 a 6 números)')+'</label><input type="text" inputmode="numeric" maxlength="6" id="p-pin"></div><div class="campo"><label>Perfil</label><select id="p-perfil"><option value="prof"'+(p.perfil!=='coord'?' selected':'')+'>Professor(a)</option><option value="coord"'+(p.perfil==='coord'?' selected':'')+'>Coordenação</option></select></div></div>',
     (id&&id!==S.d.eu.id?'<button class="btn perigo" style="margin-right:auto" onclick="removerProf(\''+id+'\')">Remover</button>':'')+'<button class="btn linha" onclick="fecharModal()">Cancelar</button><button class="btn" onclick="salvarProf(\''+(id||'')+'\')">Salvar</button>');
 }
 function salvarProf(id){
   var d={id:id||null,nome:val('p-nome').trim(),whatsapp:val('p-zap').trim(),email:val('p-email').trim(),pin:val('p-pin').trim(),perfil:val('p-perfil')};
-  chamar('salvarProfessor',d).then(function(){fecharModal();toast('Professor salvo!'+(d.pin?' Informe o PIN '+d.pin+' a ele(a).':''));recarregar();});
+  chamar('salvarProfessor',d).then(function(r){fecharModal();recarregar().then(function(){
+    var pid=id||r.id;
+    if(d.pin&&d.whatsapp){abrirModal('Professor salvo!','<p>Deseja enviar agora para <b>'+esc(d.nome)+'</b> a mensagem com o link do app e o PIN pelo WhatsApp?</p>','<button class="btn linha" onclick="fecharModal()">Agora não</button><button class="btn zap" onclick="fecharModal();enviarAcessoProf(\''+pid+'\')">'+ic('zap')+'Enviar acesso</button>');}
+    else toast('Professor salvo!'+(d.pin?' PIN: '+d.pin:''));
+  });});
+}
+function enviarAcessoProf(id){
+  chamar('acessoProfessor',{id:id}).then(function(p){
+    if(!p.whatsapp){toast('Cadastre o WhatsApp deste professor primeiro (botão Editar).',true);return;}
+    var c=S.d.config;
+    var txt=tpl(c.msgAcessoProf,{nomeProf:primeiro(p.nome),professor:primeiro(p.nome),nomeApp:c.nomeApp,igreja:c.igreja,link:linkDoApp(),pin:p.pin});
+    abrirZap(p.whatsapp,txt);
+  });
 }
 function removerProf(id){if(!confirm('Remover este professor? Ele não conseguirá mais entrar.'))return;chamar('removerProfessor',{id:id}).then(function(){fecharModal();recarregar();});}
 
@@ -936,14 +958,69 @@ VIEWS.config=function(){
     '<div class="campo"><label>Chave da API do Gemini</label><input type="password" id="cf-geminiChave" placeholder="'+(c.temIA?'•••••• (já cadastrada – cole outra para trocar)':'Cole aqui a chave')+'"></div>'+f('geminiModelo','Modelo','Padrão: gemini-3.8-flash')+(c.temIA?'<button class="btn perigo peq" onclick="if(confirm(\'Remover a chave da IA?\'))chamar(\'salvarConfig\',{removerChave:1}).then(recarregar)">Remover chave</button>':'')+
     '<h3 style="margin-top:22px">Novo ano letivo</h3><p class="muted peq">Reorganiza as datas de todas as lições para os domingos do ano escolhido (a semana 1 vai para o primeiro domingo de janeiro). Use quando for reaproveitar ou montar o currículo do ano seguinte.</p><div class="btns"><input type="number" id="cf-ano" value="'+(+c.anoLetivo+1)+'" style="width:120px"><button class="btn sec" onclick="redatar()">Reorganizar datas</button></div></div></div>'+
     '<div class="card" style="margin-top:14px"><h3>Mensagens de WhatsApp</h3><p class="muted peq">Palavras entre chaves são trocadas automaticamente: {aluno}, {responsavel}, {professor}, {igreja}, {licao}, {data}, {codigo}, {link}, {nomeApp}.</p><div class="grade g2">'+
-    f('msgFaltaAluno','"Senti sua falta" – para o aluno','',1)+f('msgFaltaPais','"Senti sua falta" – para os pais','',1)+f('msgTarefa','Lembrete de tarefa','',1)+f('msgAniversario','Aniversário','',1)+f('msgCodigo','Envio do código de acesso','',1)+'</div></div>'+
+    f('msgFaltaAluno','"Senti sua falta" – para o aluno','',1)+f('msgFaltaPais','"Senti sua falta" – para os pais','',1)+f('msgTarefa','Lembrete de tarefa','',1)+f('msgAniversario','Aniversário','',1)+f('msgCodigo','Envio do código de acesso (aluno)','',1)+f('msgAcessoProf','Envio do acesso ao professor','Use {nomeProf} e {pin}',1)+'</div></div>'+
     '<div class="btns" style="margin-top:14px;justify-content:flex-end"><button class="btn" onclick="salvarConfig()">Salvar configurações</button></div>';
 };
 function salvarConfig(){
-  var d={};['nomeApp','igreja','subtitulo','turmas','corPrincipal','profEditaLicoes','linkApp','geminiModelo','msgFaltaAluno','msgFaltaPais','msgTarefa','msgAniversario','msgCodigo','geminiChave'].forEach(function(k){d[k]=val('cf-'+k);});
+  var d={};['nomeApp','igreja','subtitulo','turmas','corPrincipal','profEditaLicoes','linkApp','geminiModelo','msgFaltaAluno','msgFaltaPais','msgTarefa','msgAniversario','msgCodigo','msgAcessoProf','geminiChave'].forEach(function(k){d[k]=val('cf-'+k);});
   chamar('salvarConfig',d).then(function(){toast('Configurações salvas!');recarregar().then(montarShell).then(render);});
 }
 function redatar(){var a=val('cf-ano');if(!confirm('Mudar as datas de TODAS as lições para os domingos de '+a+'?'))return;chamar('redatarAno',{ano:a}).then(function(){toast('Datas reorganizadas para '+a+'!');recarregar();});}
+
+/* ---------- Meu acesso: PIN e digital ---------- */
+function meuAcesso(){
+  var bio=ler('tt_bio'),ativo=bio&&bio.cred&&S.cred&&bio.cred.id===S.cred.id;
+  var corpo='';
+  if(S.d.perfil!=='aluno'){
+    corpo+='<h3>Trocar meu PIN</h3><div class="grade g3"><div class="campo"><label>PIN atual</label><input type="password" inputmode="numeric" maxlength="6" id="mp-atual"></div><div class="campo"><label>Novo PIN</label><input type="password" inputmode="numeric" maxlength="6" id="mp-novo"></div><div class="campo"><label>Repita o novo PIN</label><input type="password" inputmode="numeric" maxlength="6" id="mp-novo2"></div></div><button class="btn" onclick="trocarPin()">Salvar novo PIN</button>';
+  }
+  corpo+='<h3 style="margin-top:24px">Entrar com a digital</h3><p class="muted peq">Use a digital (ou o reconhecimento facial) deste celular para abrir o app, sem digitar '+(S.d.perfil==='aluno'?'o código':'o PIN')+'. Vale só para este aparelho.</p><div id="bio-area"><p class="muted peq">Verificando se este aparelho tem leitor de digital...</p></div>';
+  abrirModal('Meu acesso',corpo);
+  bioDisponivel().then(function(ok){
+    var a=document.getElementById('bio-area');if(!a)return;
+    if(!ok){a.innerHTML='<div class="card" style="background:var(--alerta-claro);border:0">Este aparelho ou navegador não oferece entrada com digital para sites. Ela funciona no celular, abrindo o app pelo link do GitHub (com https) no Chrome ou no Safari.</div>';return;}
+    a.innerHTML=ativo?'<p><span class="chip ok">✓ Digital ativada neste aparelho</span></p><button class="btn perigo" onclick="desativarDigital()">Desativar digital</button>':'<button class="btn" onclick="ativarDigital()">'+ic('digital')+'Ativar entrada com digital</button>';
+  });
+}
+function trocarPin(){
+  var a=val('mp-atual'),n=val('mp-novo'),n2=val('mp-novo2');
+  if(n!==n2){toast('Os dois campos do novo PIN não são iguais.',true);return;}
+  chamar('alterarMeuPin',{atual:a,novo:n}).then(function(r){
+    S.cred=r.cred;guardar('tt_cred',r.cred);
+    var bio=ler('tt_bio');if(bio&&bio.cred&&bio.cred.id===r.cred.id){bio.cred=r.cred;guardar('tt_bio',bio);}
+    fecharModal();toast('PIN alterado com sucesso!');
+  });
+}
+function b64(buf){var s='',b=new Uint8Array(buf);for(var i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s);}
+function deB64(t){var s=atob(t),b=new Uint8Array(s.length);for(var i=0;i<s.length;i++)b[i]=s.charCodeAt(i);return b;}
+function aleatorio(n){var b=new Uint8Array(n);crypto.getRandomValues(b);return b;}
+function bioDisponivel(){
+  try{
+    if(!window.PublicKeyCredential||!navigator.credentials||(location.protocol!=='https:'&&location.hostname!=='localhost'))return Promise.resolve(false);
+    return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(function(){return false;});
+  }catch(e){return Promise.resolve(false);}
+}
+function ativarDigital(){
+  var nome=S.d.eu.nome||'Usuário';
+  navigator.credentials.create({publicKey:{
+    challenge:aleatorio(32),
+    rp:{name:S.d.config.nomeApp||'Trilha Teen',id:location.hostname},
+    user:{id:aleatorio(16),name:nome,displayName:nome},
+    pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+    authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
+    timeout:60000,attestation:'none'
+  }}).then(function(c){
+    guardar('tt_bio',{id:b64(c.rawId),cred:S.cred,nome:nome});
+    fecharModal();toast('Digital ativada! Da próxima vez, é só tocar no leitor.');
+  }).catch(function(e){toast('Não foi possível ativar a digital'+(e&&e.name==='NotAllowedError'?' (cancelado).':'.'),true);});
+}
+function desativarDigital(){guardar('tt_bio',null);fecharModal();toast('Digital desativada neste aparelho.');}
+function entrarComDigital(){
+  var bio=ler('tt_bio');if(!bio)return;
+  navigator.credentials.get({publicKey:{challenge:aleatorio(32),rpId:location.hostname,allowCredentials:[{type:'public-key',id:deB64(bio.id)}],userVerification:'required',timeout:60000}})
+    .then(function(){S.cred=bio.cred;guardar('tt_cred',bio.cred);S.desbloqueado=true;carregarTudo();})
+    .catch(function(){toast('Digital não reconhecida. Tente de novo ou entre com '+(bio.cred.tipo==='aluno'?'o código':'o PIN')+'.',true);});
+}
 
 /* =========================================================
    MÓDULO DO ALUNO
@@ -959,7 +1036,7 @@ function statsEu(){
 VIEWS['a-inicio']=function(){
   var l=S.d.licoes[0],st=statsEu(),ab=tarefasAbertasAluno();
   var selos=[['📖','Primeira tarefa',st.ent>=1],['🔥','3 domingos seguidos',st.seq>=3],['🏆','5 tarefas',st.ent>=5],['💯','Nota máxima',st.max>=1],['⭐','10 estrelas',st.estrelas>=10],['🚀','10 tarefas',st.ent>=10],['🙌','8 domingos seguidos',st.seq>=8],['👑','Trimestre completo',st.ent>=13]];
-  return topo('Oi, '+esc(primeiro(S.d.eu.nome))+'! 👋','Que bom ter você na '+esc(S.d.config.nomeApp)+'!')+
+  return topo('Oi, '+esc(primeiro(S.d.eu.nome))+'! 👋','Que bom ter você na '+esc(S.d.config.nomeApp)+'!','<button class="btn sec peq" onclick="meuAcesso()">'+ic('digital')+'Entrar com digital</button>')+
     (l&&l.versiculo?'<div class="versiculo"><small>Versículo da semana</small><p style="margin-top:6px">'+esc(l.versiculo.texto)+'</p><small>'+esc(l.versiculo.ref)+'</small></div>':'')+
     '<div class="grade g3" style="margin-top:14px"><div class="card kpi"><span class="n">'+(st.freq!=null?st.freq+'%':'–')+'</span><span class="r">Minha frequência</span></div><div class="card kpi"><span class="n">'+st.ent+'</span><span class="r">Tarefas feitas</span></div><div class="card kpi"><span class="n">'+(st.media!=null?st.media+'%':'–')+'</span><span class="r">Acertos</span></div></div>'+
     (ab.length?'<div class="card" style="margin-top:14px;border-left:5px solid var(--alerta)"><h3>📝 Você tem '+ab.length+' tarefa'+(ab.length>1?'s':'')+' para fazer</h3><div class="lista">'+ab.slice(0,3).map(function(x){return '<div class="lin"><div class="info"><b>'+esc(x.titulo)+'</b><span>Lição de '+fmtD(x.data)+'</span></div><button class="btn peq" onclick="ir(\'a-licao\',\''+x.id+'\')">Fazer agora</button></div>';}).join('')+'</div></div>':'<div class="card" style="margin-top:14px;background:var(--ok-claro);border:0"><b>✅ Tudo em dia!</b> Você fez todas as tarefas. Parabéns!</div>')+
