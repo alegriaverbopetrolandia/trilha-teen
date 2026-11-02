@@ -100,6 +100,13 @@ h1,h2,h3,h4{line-height:1.25;margin:0 0 .5em}
 .lin .info{flex:1;min-width:0}
 .lin .info b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lin .info span{color:var(--txt2);font-size:13px}
+@media (max-width:640px){
+  .lin{flex-wrap:wrap;row-gap:8px}
+  .lin .info{flex:1 1 calc(100% - 56px);min-width:0}
+  .lin .info b{white-space:normal}
+  .lin>.btn,.lin>.chip{flex:0 0 auto}
+  .lin>.avatar+.info~.btn:first-of-type{margin-left:52px}
+}
 .avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:900;color:#fff;flex-shrink:0;font-size:15px}
 .campo{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
 .campo label{font-size:13px;font-weight:800;color:var(--txt2)}
