@@ -319,7 +319,7 @@ var EIXO_GRAD={1:'linear-gradient(135deg,#1e3a8a,#2563eb)',2:'linear-gradient(13
 
 /* ---------- comunicação com o servidor ---------- */
 function chamar(acao,dados,silencioso){
-  if(!silencioso) carregando(true);
+  if(!silencioso) carregando(true,/IA$/.test(acao)?'🤖 A IA está pesquisando...<br><span class="muted peq">Pode levar até 1 minuto. Não feche esta tela.</span>':'');
   return new Promise(function(ok,falha){
     var fim=function(txt){
       if(!silencioso) carregando(false);
@@ -338,7 +338,7 @@ function chamar(acao,dados,silencioso){
     } else fim(JSON.stringify({ok:false,erro:'Esta igreja ainda não está ligada ao servidor: falta colar o link do Apps Script na lista IGREJAS do arquivo index.html ('+IGREJA+').'}));
   });
 }
-function carregando(v){$('#carregando').classList.toggle('esconde',!v);}
+function carregando(v,msg){var c=$('#carregando');c.classList.toggle('esconde',!v);c.innerHTML='<div style="text-align:center"><div class="spin" style="margin:0 auto"></div>'+(v&&msg?'<p style="margin-top:14px;font-weight:800;max-width:280px;color:var(--txt)">'+msg+'</p>':'')+'</div>';}
 var _tt;function toast(m,erro){var t=$('#toast');t.textContent=m;t.className=erro?'erro':'';clearTimeout(_tt);_tt=setTimeout(function(){t.className='esconde';},erro?5000:2800);}
 function chaveIgreja(k){return (IGREJA&&IGREJA!==IGREJA_PADRAO&&k!=='tt_tema')?k+'@'+IGREJA:k;}
 function guardar(k,v){k=chaveIgreja(k);try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
