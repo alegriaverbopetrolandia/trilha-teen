@@ -240,8 +240,23 @@ table.tab td{padding:10px 6px;border-bottom:1px solid var(--linha);vertical-alig
 /* =========================================================
    TRILHA TEEN – tela do app
    ========================================================= */
-/* >>> VERSÃO GITHUB / CLOUDFLARE: cole entre as aspas o link do Apps Script (termina em /exec) <<< */
-var API_URL = 'https://script.google.com/macros/s/AKfycbxIe6EVXRqKefnCPTeKSgovf4jm_dfLAq1xO3OHouavaVSSrqU6kKehzHIuYWqWhui5vg/exec';
+/* >>> VERSÃO GITHUB / CLOUDFLARE <<<
+   Uma linha para cada igreja: 'apelido': 'link do Apps Script (termina em /exec)'.
+   A PRIMEIRA igreja da lista é a que abre quando o link não tem ?igreja=
+   Exemplo de link de outra igreja: https://.../trilha-teen/?igreja=paulo-afonso            */
+var IGREJAS = {
+  'petrolandia': '',
+  'paulo-afonso': 'https://script.google.com/macros/s/AKfycbyiFuCj2vO72-GgWf-OBcAiHYbrDXXXVU8p4kD0XR_0F7oA8JzrIXn4lZ4HWScA4HaKmw/exec'
+};
+var IGREJA_PADRAO = Object.keys(IGREJAS)[0];
+var IGREJA = (function(){
+  var q = (location.search.match(/[?&]igreja=([^&#]+)/) || [])[1];
+  var salvo = null; try { salvo = localStorage.getItem('tt_igreja'); } catch (e) {}
+  var slug = q && IGREJAS.hasOwnProperty(q) ? q : (salvo && IGREJAS.hasOwnProperty(salvo) ? salvo : IGREJA_PADRAO);
+  try { localStorage.setItem('tt_igreja', slug); } catch (e) {}
+  return slug;
+})();
+var API_URL = IGREJAS[IGREJA] || '';
 
 var S = { cred: null, d: null, view: 'painel', param: null, filtros: {}, iaHist: [] };
 var IC = {
@@ -308,13 +323,14 @@ function chamar(acao,dados,silencioso){
       google.script.run.withSuccessHandler(fim).withFailureHandler(function(e){fim(JSON.stringify({ok:false,erro:'Falha de conexão: '+(e&&e.message||e)}));}).apiWeb(acao,dadosJ,credJ);
     } else if(window.DEMO_API){
       setTimeout(function(){fim(DEMO_API(acao,dadosJ,credJ));},120);
-    } else fim(JSON.stringify({ok:false,erro:'Falta colar o link do Apps Script no arquivo index.html (linha "var API_URL"). Veja o guia de publicação.'}));
+    } else fim(JSON.stringify({ok:false,erro:'Esta igreja ainda não está ligada ao servidor: falta colar o link do Apps Script na lista IGREJAS do arquivo index.html ('+IGREJA+').'}));
   });
 }
 function carregando(v){$('#carregando').classList.toggle('esconde',!v);}
 var _tt;function toast(m,erro){var t=$('#toast');t.textContent=m;t.className=erro?'erro':'';clearTimeout(_tt);_tt=setTimeout(function(){t.className='esconde';},erro?5000:2800);}
-function guardar(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-function ler(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
+function chaveIgreja(k){return (IGREJA&&IGREJA!==IGREJA_PADRAO&&k!=='tt_tema')?k+'@'+IGREJA:k;}
+function guardar(k,v){k=chaveIgreja(k);try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function ler(k){k=chaveIgreja(k);try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 
 /* ---------- markdown simples ---------- */
 function md(t){
@@ -412,7 +428,7 @@ function varsAluno(a,extra){
 }
 function linkDoApp(){
   var c=S.d.config,l=c.linkApp||'';
-  if(API_URL&&(!l||/script\.google/.test(l))&&/^https?:/.test(location.protocol))return location.origin+location.pathname.replace(/index\.html$/,'');
+  if(API_URL&&(!l||/script\.google/.test(l))&&/^https?:/.test(location.protocol))return location.origin+location.pathname.replace(/index\.html$/,'')+(IGREJA!==IGREJA_PADRAO?'?igreja='+IGREJA:'');
   return l||'(link do app)';
 }
 function abrirZap(numero,texto,log){
